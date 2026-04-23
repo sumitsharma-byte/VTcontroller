@@ -15,6 +15,10 @@ use App\Http\Controllers\Api\TagController;
 |--------------------------------------------------------------------------
 */
 
+Route::get('/health', function () {
+    return response()->json(['status' => 'ok', 'timestamp' => now()]);
+});
+
 // ── Public Auth Routes ────────────────────────────────────
 Route::prefix('auth')->group(function () {
     Route::post('register', [AuthController::class, 'register']);
