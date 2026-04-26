@@ -146,7 +146,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
 
         {/* Nav */}
-        <nav style={{ flex: 1, padding: '4px 12px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+        <nav style={{ flex: 1, padding: '4px 12px', display: 'flex', flexDirection: 'column', gap: '2px', overflowY: 'auto', minHeight: 0 }}>
           {!collapsed && (
             <div style={{ fontSize: '10px', letterSpacing: '0.8px', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px', marginTop: '4px', paddingLeft: '4px' }}>
               MAIN MENU
@@ -214,13 +214,13 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         {/* Quick add */}
         {!collapsed && user?.role !== 'member' && (
           <div style={{ padding: '0 12px 12px' }}>
-            <button 
+            <Link 
+              href="/board?create=true"
               className="btn btn-primary" 
-              style={{ width: '100%', justifyContent: 'center' }}
-              onClick={() => router.push('/board?create=true')}
+              style={{ width: '100%', justifyContent: 'center', textDecoration: 'none' }}
             >
               <Plus size={15} /> New Task
-            </button>
+            </Link>
           </div>
         )}
 

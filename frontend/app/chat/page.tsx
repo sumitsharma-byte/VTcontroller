@@ -410,8 +410,10 @@ export default function ChatPage() {
     if (!activeChat) return;
     loadMessages(activeChat);
 
-    // Poll every 4 seconds
-    pollingRef.current = setInterval(() => loadMessages(activeChat, true), 4000);
+    // Poll every 4s, but only when tab is visible
+    pollingRef.current = setInterval(() => {
+      if (document.visibilityState === 'visible') loadMessages(activeChat, true);
+    }, 4000);
     return () => { if (pollingRef.current) clearInterval(pollingRef.current); };
   }, [activeChat, loadMessages]);
 
@@ -836,9 +838,7 @@ export default function ChatPage() {
         <NewChatModal users={wsUsers} onClose={() => setShowNewChat(false)} onCreate={handleNewChat} />
       )}
 
-      <style>{`
-        @keyframes fadeInUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
-      `}</style>
+      {/* Animations are now in globals.css */}
     </AppLayout>
   );
 }

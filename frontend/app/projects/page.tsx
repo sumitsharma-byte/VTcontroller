@@ -6,7 +6,9 @@ import AppLayout from '@/components/AppLayout';
 import { useAuth } from '@/lib/auth';
 import { projectsApi, type ApiProject } from '@/lib/api';
 import { Plus, Search, CheckCircle, AlertTriangle, Trash2, Check } from 'lucide-react';
-import CreateProjectModal from '@/components/CreateProjectModal';
+import dynamic from 'next/dynamic';
+
+const CreateProjectModal = dynamic(() => import('@/components/CreateProjectModal'), { ssr: false });
 
 const RISK_CONFIG = {
   green: { label: 'On Track', color: '#22c55e', bg: 'rgba(34,197,94,0.1)' },
@@ -290,8 +292,8 @@ export default function ProjectsPage() {
         </div>
       )}
 
+      {/* Animations & responsive styles */}
       <style>{`
-        @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
         .project-controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 16px; flex-wrap: wrap; }
         .filters-container { display: flex; gap: 12px; margin-bottom: 24px; align-items: center; flex-wrap: wrap; }
         .projects-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 16px; }

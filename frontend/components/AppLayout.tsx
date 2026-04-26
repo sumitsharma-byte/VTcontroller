@@ -1,12 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import AuthGuard from './AuthGuard';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
-import ChatPopup from './ChatPopup';
+import dynamic from 'next/dynamic';
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+// Lazy-load ChatPopup — it's ~36KB and only needed when user opens chat
+const ChatPopup = dynamic(() => import('./ChatPopup'), {
+  ssr: false,
+  loading: () => null, // Don't show anything while loading
+});
+
+function AppLayout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const sidebarWidth = collapsed ? 64 : 240;
 
@@ -40,3 +46,4 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   );
 }
 
+export default memo(AppLayout);

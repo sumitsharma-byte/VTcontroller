@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { Zap, Mail, Lock, ArrowRight, Eye, EyeOff, AlertCircle } from 'lucide-react';
@@ -14,6 +14,12 @@ export default function LoginPage() {
   const [showPwd, setShowPwd]   = useState(false);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState('');
+
+  // Prefetch the dashboard route so the development server compiles it 
+  // in the background while the user is typing, making the transition instant.
+  useEffect(() => {
+    router.prefetch('/dashboard');
+  }, [router]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -181,7 +187,7 @@ export default function LoginPage() {
         </div>
       </div>
 
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      {/* Animations are now in globals.css */}
     </div>
   );
 }

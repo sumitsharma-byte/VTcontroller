@@ -59,23 +59,34 @@ function playChatSound() {
     }
     
     const now = sharedAudioCtx.currentTime;
-    const osc = sharedAudioCtx.createOscillator();
-    const gainNode = sharedAudioCtx.createGain();
     
-    osc.connect(gainNode);
-    gainNode.connect(sharedAudioCtx.destination);
+    // First tone (A5)
+    const osc1 = sharedAudioCtx.createOscillator();
+    const gain1 = sharedAudioCtx.createGain();
+    osc1.connect(gain1);
+    gain1.connect(sharedAudioCtx.destination);
     
-    // Nice soft bubble pop sound
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(600, now);
-    osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(880, now);
+    gain1.gain.setValueAtTime(0, now);
+    gain1.gain.linearRampToValueAtTime(0.3, now + 0.05);
+    gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+    osc1.start(now);
+    osc1.stop(now + 0.2);
+
+    // Second tone (C#6)
+    const osc2 = sharedAudioCtx.createOscillator();
+    const gain2 = sharedAudioCtx.createGain();
+    osc2.connect(gain2);
+    gain2.connect(sharedAudioCtx.destination);
     
-    gainNode.gain.setValueAtTime(0, now);
-    gainNode.gain.linearRampToValueAtTime(0.5, now + 0.02);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
-    
-    osc.start(now);
-    osc.stop(now + 0.2);
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(1108.73, now + 0.1);
+    gain2.gain.setValueAtTime(0, now + 0.1);
+    gain2.gain.linearRampToValueAtTime(0.3, now + 0.15);
+    gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+    osc2.start(now + 0.1);
+    osc2.stop(now + 0.4);
   } catch (e) {
     console.error("Audio block:", e);
   }
@@ -232,15 +243,16 @@ function MessageView({
         if (lastMsg && lastMsg.user.id !== userId) playChatSound();
       }
       prevMsgCountRef.current = res.messages.length;
-      if (!silent || res.messages.length !== messages.length) {
-         setMessages(res.messages);
-      }
+      setMessages(res.messages);
     } catch { } finally { if (!silent) setLoading(false); }
-  }, [chat.id, userId, messages.length]);
+  }, [chat.id, userId]); // removed messages.length — it caused infinite interval recreation
 
+  // Visibility-aware polling: pause when tab is backgrounded to save resources
   useEffect(() => {
     load();
-    pollingRef.current = setInterval(() => load(true), 4000);
+    pollingRef.current = setInterval(() => {
+      if (document.visibilityState === 'visible') load(true);
+    }, 4000);
     return () => { if (pollingRef.current) clearInterval(pollingRef.current); };
   }, [load]);
 
@@ -504,6 +516,27 @@ export default function ChatPopup() {
   const [chatSearch, setChatSearch] = useState('');
   const [loaded, setLoaded] = useState(false);
 
+  // Unlock AudioContext on first user interaction to bypass browser autoplay policies
+  useEffect(() => {
+    const unlockAudio = () => {
+      if (!sharedAudioCtx) {
+        const Ctx = window.AudioContext || (window as any).webkitAudioContext;
+        if (Ctx) sharedAudioCtx = new Ctx();
+      }
+      if (sharedAudioCtx && sharedAudioCtx.state === 'suspended') {
+        sharedAudioCtx.resume();
+      }
+      document.removeEventListener('click', unlockAudio);
+      document.removeEventListener('keydown', unlockAudio);
+    };
+    document.addEventListener('click', unlockAudio);
+    document.addEventListener('keydown', unlockAudio);
+    return () => {
+      document.removeEventListener('click', unlockAudio);
+      document.removeEventListener('keydown', unlockAudio);
+    };
+  }, []);
+
   // Load chats when popup first opens
   useEffect(() => {
     if (!open || !user || loaded) return;
@@ -514,11 +547,13 @@ export default function ChatPopup() {
     }).catch(() => {});
   }, [open, user, loaded]);
 
-  // Poll for new chats every 10s while open
+  // Poll for new chats every 10s while popup is open and tab is visible
   useEffect(() => {
     if (!open || !user) return;
     const interval = setInterval(() => {
-      chatApi.list().then(res => setChats(res.chats)).catch(() => {});
+      if (document.visibilityState === 'visible') {
+        chatApi.list().then(res => setChats(res.chats)).catch(() => {});
+      }
     }, 10000);
     return () => clearInterval(interval);
   }, [open, user]);
@@ -701,12 +736,7 @@ export default function ChatPopup() {
         </div>
       )}
 
-      <style>{`
-        @keyframes popupIn {
-          from { opacity: 0; transform: translateY(16px) scale(0.95); }
-          to   { opacity: 1; transform: translateY(0) scale(1); }
-        }
-      `}</style>
+      {/* popupIn animation is now in globals.css */}
     </>
   );
 }

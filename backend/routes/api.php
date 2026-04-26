@@ -89,6 +89,9 @@ Route::middleware('auth:api')->group(function () {
         Route::get('ai-insights',        [AdminController::class, 'aiInsights']);
         Route::post('users',                             [AdminController::class, 'createUser']);
         Route::get('users/{user}/audit-chats',           [AdminController::class, 'auditChats']);
+        Route::delete('users/{user}',                    [AdminController::class, 'deleteUser']);
+        Route::post('users/{user}/reset-password',       [AdminController::class, 'resetPassword']);
+        Route::put('users/{user}/role',                  [AdminController::class, 'updateRole']);
     });
 
     // ── Chat Routes ───────────────────────────────────────
