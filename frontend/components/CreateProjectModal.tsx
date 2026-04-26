@@ -181,7 +181,7 @@ export default function CreateProjectModal({ workspaceId, onClose, onCreated }: 
           </div>
         </form>
       </div>
-      <style>{`@keyframes fadeInUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }`}</style>
+      {/* Animations are now in globals.css */}
     </div>
   );
 }

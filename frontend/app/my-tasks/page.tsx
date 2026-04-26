@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, memo } from 'react';
 import AppLayout from '@/components/AppLayout';
 import { useAuth } from '@/lib/auth';
 import { tasksApi, type ApiTask, type MyTasksResponse } from '@/lib/api';
-import TaskDetailModal from '@/components/TaskDetailModal';
+import dynamic from 'next/dynamic';
+
+const TaskDetailModal = dynamic(() => import('@/components/TaskDetailModal'), { ssr: false });
 import Link from 'next/link';
 import {
   CheckSquare, Clock, AlertTriangle, Check,
@@ -40,7 +42,7 @@ const Skeleton = ({ h = 56 }: { h?: number }) => (
 );
 
 // ── Task Row ──────────────────────────────────────────────
-function TaskRow({
+const TaskRow = memo(function TaskRow({
   task,
   onClick,
 }: { task: ApiTask; onClick: () => void }) {
@@ -159,8 +161,8 @@ function TaskRow({
         )}
       </div>
     </div>
-  );
-}
+   );
+});
 
 // ── Status Section ────────────────────────────────────────
 function StatusSection({
@@ -423,10 +425,7 @@ export default function MyTasksPage() {
         />
       )}
 
-      <style>{`
-        @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-        @keyframes spin    { to { transform: rotate(360deg); } }
-      `}</style>
+      {/* Animations are now in globals.css */}
     </AppLayout>
   );
 }

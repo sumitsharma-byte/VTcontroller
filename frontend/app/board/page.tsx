@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, memo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import AppLayout from '@/components/AppLayout';
 import { useAuth } from '@/lib/auth';
@@ -15,8 +15,11 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Plus, AlertTriangle, Clock, Tag } from 'lucide-react';
-import CreateTaskModal from '@/components/CreateTaskModal';
-import TaskDetailModal from '@/components/TaskDetailModal';
+import dynamic from 'next/dynamic';
+
+// Lazy-load heavy modals — only downloaded when user interacts
+const CreateTaskModal = dynamic(() => import('@/components/CreateTaskModal'), { ssr: false });
+const TaskDetailModal = dynamic(() => import('@/components/TaskDetailModal'), { ssr: false });
 
 const COLUMNS = [
   { id: 'todo',        label: 'To Do',       color: '#8892a4' },
@@ -30,7 +33,7 @@ const PRIORITY_COLOR: Record<string, string> = {
 };
 
 // ── Draggable Task Card ───────────────────────────────────
-function TaskCard({ task, isDragging = false, onTaskClick }: { task: ApiTask; isDragging?: boolean; onTaskClick?: (id: number) => void }) {
+const TaskCard = memo(function TaskCard({ task, isDragging = false, onTaskClick }: { task: ApiTask; isDragging?: boolean; onTaskClick?: (id: number) => void }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: `task-${task.id}` });
 
   const style = {
@@ -137,7 +140,7 @@ function TaskCard({ task, isDragging = false, onTaskClick }: { task: ApiTask; is
       </div>
     </div>
   );
-}
+});
 
 // ── Droppable Column ──────────────────────────────────────
 function Column({ col, tasks, onTaskClick, userRole }: { col: typeof COLUMNS[0]; tasks: ApiTask[]; onTaskClick?: (id: number) => void; userRole?: string }) {

@@ -186,7 +186,7 @@ export default function VtcAdminLoginPage() {
         </p>
       </div>
 
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      {/* Animations are now in globals.css */}
     </div>
   );
 }

@@ -51,7 +51,7 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
           </svg>
         </div>
         <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>Verifying admin session…</span>
-        <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}`}</style>
+        {/* Animations are now in globals.css */}
       </div>
     );
   }

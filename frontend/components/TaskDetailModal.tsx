@@ -1168,17 +1168,8 @@ export default function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted 
         </div>
       </div>
 
+      {/* Animations are now in globals.css */}
       <style>{`
-        @keyframes taskModalIn {
-          from { opacity: 0; transform: scale(0.97) translateY(8px); }
-          to   { opacity: 1; transform: scale(1) translateY(0); }
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
-        @keyframes toastIn {
-          from { opacity: 0; transform: translateX(12px); }
-          to   { opacity: 1; transform: translateX(0); }
-        }
         /* Fix native date picker calendar icon — completely hidden */
         input[type="date"]::-webkit-calendar-picker-indicator {
           display: none;

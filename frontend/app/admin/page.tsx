@@ -152,7 +152,7 @@ export default function AdminPage() {
           { label: 'Total Projects',    value: overview?.total_projects,   sub: `${overview?.active_projects} active`, color: 'var(--blue-300)' },
           { label: 'Active Tasks',      value: overview?.active_tasks,     sub: 'In progress',    color: 'var(--color-success)' },
           { label: 'Overdue / Blocked', value: overview?.critical_count,   sub: 'Needs attention', color: 'var(--color-danger)' },
-          { label: 'Team Efficiency',   value: `${overview?.team_efficiency}%`, sub: 'Avg across team', color: 'var(--blue-400)' },
+          { label: 'Team Efficiency',   value: `${overview?.team_efficiency ?? 0}%`, sub: 'Avg across team', color: 'var(--blue-400)' },
         ].map(card => (
           <div key={card.label} className="card">
             <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px', fontWeight: 500 }}>{card.label}</div>
@@ -424,7 +424,7 @@ export default function AdminPage() {
         </div>
       )}
 
-      <style>{`@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}} @keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      {/* Animations are now in globals.css */}
     </AppLayout>
   );
 }

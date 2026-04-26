@@ -28,13 +28,13 @@ const Skeleton = ({ w = '100%', h = 20, radius = 6 }: { w?: string | number; h?:
 export default function DashboardPage() {
   const { user } = useAuth();
   const router = useRouter();
-  const [overview, setOverview]     = useState<AdminOverview | null>(null);
-  const [alerts, setAlerts]         = useState<AdminAlert[]>([]);
-  const [insights, setInsights]     = useState<AiInsight[]>([]);
-  const [distrib, setDistrib]       = useState<{ name: string; value: number; color: string }[]>([]);
-  const [trend, setTrend]           = useState<{ date: string; delays: number }[]>([]);
-  const [teamPerf, setTeamPerf]     = useState<{ name: string; completed: number; delayed: number }[]>([]);
-  const [loading, setLoading]       = useState(true);
+  const [overview, setOverview] = useState<AdminOverview | null>(null);
+  const [alerts, setAlerts] = useState<AdminAlert[]>([]);
+  const [insights, setInsights] = useState<AiInsight[]>([]);
+  const [distrib, setDistrib] = useState<{ name: string; value: number; color: string }[]>([]);
+  const [trend, setTrend] = useState<{ date: string; delays: number }[]>([]);
+  const [teamPerf, setTeamPerf] = useState<{ name: string; completed: number; delayed: number }[]>([]);
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchAll = async () => {
@@ -86,7 +86,7 @@ export default function DashboardPage() {
     { label: 'Total Projects', value: overview.total_projects, sub: `${overview.active_projects} active`, icon: FolderKanban, color: '#4f8ef7' },
     { label: 'Active Tasks', value: overview.active_tasks, sub: 'Currently in progress', icon: CheckSquare, color: '#22c55e' },
     { label: 'Overdue / Blocked', value: overview.critical_count, sub: 'Need immediate attention', icon: AlertTriangle, color: '#ef4444' },
-    { label: 'Team Efficiency', value: `${overview.team_efficiency}%`, sub: 'Avg across all members', icon: TrendingUp, color: '#7c5af3' },
+    { label: 'Team Efficiency', value: `${overview.team_efficiency ?? 0}%`, sub: 'Avg across all members', icon: TrendingUp, color: '#7c5af3' },
   ] : [];
 
   return (
@@ -274,7 +274,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <style>{`@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} } @keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      {/* Animations are now in globals.css */}
     </AppLayout>
   );
 }

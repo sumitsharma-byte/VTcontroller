@@ -3,15 +3,22 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AdminGuard from '../AdminGuard';
+// Recharts loaded via direct import – the dynamic() wrapper was causing TS errors
+// because ResponsiveContainer expects children. Instead we use a lazy loaded
+// chart wrapper at the component-boundary level below.
 import {
   ResponsiveContainer, PieChart, Pie, Cell, Tooltip,
-  LineChart, Line, XAxis, YAxis, CartesianGrid, BarChart, Bar,
+  LineChart, Line, XAxis, YAxis, CartesianGrid,
+  BarChart, Bar,
 } from 'recharts';
+
 import {
   Brain, RefreshCw, AlertTriangle, Zap, FolderKanban,
-  Shield, LogOut, UserPlus, Users, CheckCircle2, XCircle,
+  Shield, LogOut, UserPlus, Users, CheckCircle2, XCircle, Key, Trash2, Edit3
 } from 'lucide-react';
-import ChatPopup from '@/components/ChatPopup';
+import dynamic from 'next/dynamic';
+
+const ChatPopup = dynamic(() => import('@/components/ChatPopup'), { ssr: false });
 
 // ── API helper using the admin's own token ─────────────────
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000/api';
@@ -32,6 +39,7 @@ async function adminReq<T>(path: string, options: RequestInit = {}): Promise<T> 
   if (res.status === 401) {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('vtc_admin_token');
+      window.location.href = '/vtc-admin/login';
     }
     throw new Error('Unauthorized');
   }
@@ -87,6 +95,7 @@ function AdminPanelContent() {
   const [userFormLoading, setUserFormLoading] = useState(false);
   const [userFormMsg, setUserFormMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [userList, setUserList] = useState<any[]>([]);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   // ── Audit State ──
   const [auditUser, setAuditUser] = useState<any>(null);
@@ -104,6 +113,55 @@ function AdminPanelContent() {
       setAuditData([]);
     } finally {
       setAuditLoading(false);
+    }
+  };
+
+  const deleteUser = async (userId: number) => {
+    if (!confirm('Are you sure you want to delete this user?')) return;
+    setActionLoading(`delete-${userId}`);
+    try {
+      await adminReq(`/admin/users/${userId}${q}`, { method: 'DELETE' });
+      setUserList(prev => prev.filter(u => u.id !== userId));
+      setTeamTable(prev => prev.filter(u => u.id !== userId));
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete user');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const resetPassword = async (userId: number) => {
+    const newPassword = prompt('Enter new password (min 6 characters):');
+    if (!newPassword) return;
+    if (newPassword.length < 6) return alert('Password must be at least 6 characters');
+    
+    setActionLoading(`reset-${userId}`);
+    try {
+      await adminReq(`/admin/users/${userId}/reset-password${q}`, {
+        method: 'POST',
+        body: JSON.stringify({ password: newPassword })
+      });
+      alert('Password reset successfully');
+    } catch (err: any) {
+      alert(err.message || 'Failed to reset password');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const updateRole = async (userId: number, role: string) => {
+    setActionLoading(`role-${userId}`);
+    try {
+      await adminReq(`/admin/users/${userId}/role${q}`, {
+        method: 'PUT',
+        body: JSON.stringify({ role })
+      });
+      setUserList(prev => prev.map(u => u.id === userId ? { ...u, role } : u));
+      setTeamTable(prev => prev.map(u => u.id === userId ? { ...u, role } : u));
+    } catch (err: any) {
+      alert(err.message || 'Failed to update role');
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -325,7 +383,7 @@ function AdminPanelContent() {
               { label: 'Total Projects',    value: overview?.total_projects,        sub: `${overview?.active_projects} active`,  color: 'var(--blue-300)' },
               { label: 'Active Tasks',      value: overview?.active_tasks,          sub: 'In progress',                          color: 'var(--color-success)' },
               { label: 'Overdue / Blocked', value: overview?.critical_count,        sub: 'Needs attention',                      color: 'var(--color-danger)' },
-              { label: 'Team Efficiency',   value: `${overview?.team_efficiency}%`, sub: 'Avg across team',                      color: 'var(--blue-400)' },
+              { label: 'Team Efficiency',   value: `${overview?.team_efficiency ?? 0}%`, sub: 'Avg across team',                      color: 'var(--blue-400)' },
             ].map(card => (
               <div key={card.label} className="card">
                 <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px', fontWeight: 500 }}>{card.label}</div>
@@ -693,15 +751,13 @@ function AdminPanelContent() {
                 </div>
                 <div>
                   <label style={labelStyle}>Role *</label>
-                  <select
-                    style={{ ...inputStyle, cursor: 'pointer' }}
+                  <input
+                    style={inputStyle}
+                    placeholder="e.g. Member"
                     value={userForm.role}
                     onChange={e => setUserForm(f => ({ ...f, role: e.target.value }))}
-                  >
-                    <option value="member">Member</option>
-                    <option value="manager">Manager</option>
-                    <option value="admin">Admin</option>
-                  </select>
+                    required
+                  />
                 </div>
                 <div>
                   <label style={labelStyle}>Department</label>
@@ -744,14 +800,14 @@ function AdminPanelContent() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                   <thead>
                     <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                      {['Member', 'Email', 'Role', 'Department', 'Tasks', 'Efficiency', 'Status'].map(h => (
+                      {['Member', 'Email', 'Role', 'Department', 'Tasks', 'Efficiency', 'Status', 'Actions'].map(h => (
                         <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {loading
-                      ? Array(4).fill(0).map((_, i) => <tr key={i}><td colSpan={7} style={{ padding: '12px 16px' }}><Skeleton h={20} /></td></tr>)
+                      ? Array(4).fill(0).map((_, i) => <tr key={i}><td colSpan={8} style={{ padding: '12px 16px' }}><Skeleton h={20} /></td></tr>)
                       : userList.map((m: any) => (
                         <tr key={m.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}
                           onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.02)')}
@@ -767,11 +823,25 @@ function AdminPanelContent() {
                           </td>
                           <td style={{ padding: '12px 16px', color: 'var(--text-muted)', fontSize: '12px' }}>{m.email}</td>
                           <td style={{ padding: '12px 16px' }}>
-                            <span style={{
-                              fontSize: '10px', padding: '3px 9px', borderRadius: '12px', fontWeight: 700, textTransform: 'capitalize',
-                              background: m.role === 'admin' ? 'rgba(239,68,68,0.1)' : m.role === 'manager' ? 'rgba(245,158,11,0.1)' : 'rgba(79,142,247,0.1)',
-                              color: m.role === 'admin' ? '#ef4444' : m.role === 'manager' ? '#f59e0b' : '#4f8ef7',
-                            }}>{m.role}</span>
+                            <button 
+                              onClick={() => {
+                                const newRole = prompt('Enter new role for this user:', m.role);
+                                if (newRole !== null && newRole.trim() !== '' && newRole !== m.role) {
+                                  updateRole(m.id, newRole.trim());
+                                }
+                              }}
+                              disabled={actionLoading === `role-${m.id}`}
+                              style={{
+                                background: m.role?.toLowerCase() === 'admin' ? 'rgba(239,68,68,0.1)' : m.role?.toLowerCase() === 'manager' ? 'rgba(245,158,11,0.1)' : 'rgba(79,142,247,0.1)',
+                                color: m.role?.toLowerCase() === 'admin' ? '#ef4444' : m.role?.toLowerCase() === 'manager' ? '#f59e0b' : '#4f8ef7',
+                                border: '1px solid var(--border)', borderRadius: '6px', padding: '4px 8px', fontSize: '10px', fontWeight: 700, cursor: 'pointer', outline: 'none',
+                                display: 'inline-flex', alignItems: 'center', gap: 4, textTransform: 'capitalize',
+                                opacity: actionLoading === `role-${m.id}` ? 0.5 : 1
+                              }}
+                              title="Click to edit role"
+                            >
+                              {actionLoading === `role-${m.id}` ? 'Updating...' : (m.role || 'Member')} <Edit3 size={10} />
+                            </button>
                           </td>
                           <td style={{ padding: '12px 16px', color: 'var(--text-muted)', fontSize: '12px' }}>{m.department || '—'}</td>
                           <td style={{ padding: '12px 16px', color: 'var(--text-secondary)', fontWeight: 600 }}>{m.assigned}</td>
@@ -787,6 +857,26 @@ function AdminPanelContent() {
                             <span style={{ fontSize: '10px', padding: '3px 9px', borderRadius: '12px', background: `${statusColor(m.status)}18`, color: statusColor(m.status), fontWeight: 700 }}>
                               {m.status?.charAt(0).toUpperCase() + m.status?.slice(1)}
                             </span>
+                          </td>
+                          <td style={{ padding: '12px 16px' }}>
+                            <div style={{ display: 'flex', gap: '6px' }}>
+                              <button
+                                onClick={() => resetPassword(m.id)}
+                                disabled={actionLoading === `reset-${m.id}`}
+                                style={{ padding: '4px', borderRadius: '6px', background: 'rgba(79,142,247,0.1)', color: '#4f8ef7', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                title="Reset Password"
+                              >
+                                <Key size={14} />
+                              </button>
+                              <button
+                                onClick={() => deleteUser(m.id)}
+                                disabled={actionLoading === `delete-${m.id}` || m.email === adminUser?.email}
+                                style={{ padding: '4px', borderRadius: '6px', background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: 'none', cursor: m.email === adminUser?.email ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: m.email === adminUser?.email ? 0.3 : 1 }}
+                                title={m.email === adminUser?.email ? "Cannot delete yourself" : "Delete User"}
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))
@@ -835,11 +925,8 @@ function AdminPanelContent() {
 
       <ChatPopup />
 
-      <style>{`
-        @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-        @keyframes spin    { to { transform: rotate(360deg); } }
-        select option { background: #1a1f2e; color: white; }
-      `}</style>
+      {/* Animations are now in globals.css */}
+      <style>{`select option { background: #1a1f2e; color: white; }`}</style>
     </div>
   );
 }

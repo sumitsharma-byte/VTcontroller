@@ -1,10 +1,11 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Zap } from 'lucide-react';
 
-export default function AuthCallbackPage() {
+function AuthCallbackContent() {
   const router       = useRouter();
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<'loading' | 'error'>('loading');
@@ -85,10 +86,31 @@ export default function AuthCallbackPage() {
         </p>
       )}
 
-      <style>{`
-        @keyframes spin  { to { transform: rotate(360deg); } }
-        @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.6; } }
-      `}</style>
+      {/* Animations are now in globals.css */}
     </div>
+  );
+}
+
+export default function AuthCallbackPage() {
+  return (
+    <Suspense fallback={
+      <div style={{
+        minHeight: '100vh',
+        background: 'var(--bg-primary)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+        <div style={{
+          width: 40, height: 40,
+          border: '3px solid rgba(79,142,247,0.2)',
+          borderTopColor: '#4f8ef7',
+          borderRadius: '50%',
+          animation: 'spin 0.8s linear infinite',
+        }} />
+      </div>
+    }>
+      <AuthCallbackContent />
+    </Suspense>
   );
 }

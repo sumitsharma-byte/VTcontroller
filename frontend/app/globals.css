@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&display=swap');
+/* Fonts are loaded via next/font in layout.tsx — no render-blocking @import needed */
 @import "tailwindcss";
 
 /* ═══════════════════════════════════════════════════════════════
@@ -88,7 +88,7 @@ html, body {
   background-attachment: fixed;
   background-size: cover;
   color: var(--text-primary);
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: var(--font-inter), 'Inter', system-ui, sans-serif;
   font-size: 14px;
   line-height: 1.65;
   overflow-x: hidden;
@@ -111,8 +111,8 @@ html, body {
 /* ══════════════════════════════════
    TYPOGRAPHY UTILS
 ══════════════════════════════════ */
-.font-display { font-family: 'Space Grotesk', sans-serif; }
-h1, h2, h3, h4 { font-family: 'Space Grotesk', sans-serif; color: var(--text-primary); }
+.font-display { font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif; }
+h1, h2, h3, h4 { font-family: var(--font-space-grotesk), 'Space Grotesk', sans-serif; color: var(--text-primary); }
 
 /* ══════════════════════════════════
    GLASS & SURFACE STYLES
@@ -472,3 +472,42 @@ h1, h2, h3, h4 { font-family: 'Space Grotesk', sans-serif; color: var(--text-pri
   color: var(--blue-300);
   border: 1px solid rgba(123, 189, 232, 0.2);
 }
+
+/* ══════════════════════════════════
+   SHARED KEYFRAME ANIMATIONS
+   (Centralised here — pages should NOT duplicate these)
+══════════════════════════════════ */
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.4; }
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(-8px) scale(0.95); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes taskModalIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes popupIn {
+  from { opacity: 0; transform: translateY(16px) scale(0.95); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+

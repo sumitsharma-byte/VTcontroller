@@ -301,7 +301,7 @@ class AdminController extends Controller
             'email'      => 'required|email|unique:users',
             'password'   => 'required|string|min:6',
             'department' => 'nullable|string|max:100',
-            'role'       => 'required|in:admin,manager,member',
+            'role'       => 'required|string|max:50',
         ]);
 
         if ($validator->fails()) {
@@ -352,6 +352,80 @@ class AdminController extends Controller
         });
 
         return response()->json(['audit_chats' => $chats]);
+    }
+
+    /**
+     * DELETE /api/admin/users/{user}
+     */
+    public function deleteUser(Request $request, User $user): JsonResponse
+    {
+        $workspaceId = $request->workspace_id ?? auth()->user()->current_workspace_id;
+        if (!$user->workspaces()->where('workspaces.id', $workspaceId)->exists()) {
+            return response()->json(['message' => 'User not in workspace'], 403);
+        }
+
+        // Prevent self-deletion
+        if ($user->id === auth()->id()) {
+            return response()->json(['message' => 'Cannot delete yourself'], 403);
+        }
+
+        // Detach from workspace and delete user
+        Workspace::find($workspaceId)->members()->detach($user->id);
+        $user->delete();
+
+        return response()->json(['message' => 'User deleted successfully']);
+    }
+
+    /**
+     * POST /api/admin/users/{user}/reset-password
+     */
+    public function resetPassword(Request $request, User $user): JsonResponse
+    {
+        $workspaceId = $request->workspace_id ?? auth()->user()->current_workspace_id;
+        if (!$user->workspaces()->where('workspaces.id', $workspaceId)->exists()) {
+            return response()->json(['message' => 'User not in workspace'], 403);
+        }
+
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+            'password' => 'required|string|min:6',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $user->update([
+            'password' => \Illuminate\Support\Facades\Hash::make($request->password),
+        ]);
+
+        return response()->json(['message' => 'Password reset successfully']);
+    }
+
+    /**
+     * PUT /api/admin/users/{user}/role
+     */
+    public function updateRole(Request $request, User $user): JsonResponse
+    {
+        $workspaceId = $request->workspace_id ?? auth()->user()->current_workspace_id;
+        if (!$user->workspaces()->where('workspaces.id', $workspaceId)->exists()) {
+            return response()->json(['message' => 'User not in workspace'], 403);
+        }
+
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+            'role' => 'required|string|max:50',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $user->update(['role' => $request->role]);
+        Workspace::find($workspaceId)->members()->updateExistingPivot($user->id, ['role' => $request->role]);
+
+        return response()->json([
+            'message' => 'User role updated successfully',
+            'role'    => $request->role,
+        ]);
     }
 
     // ── Private helpers ───────────────────────────────────

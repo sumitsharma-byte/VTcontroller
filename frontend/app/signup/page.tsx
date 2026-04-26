@@ -358,8 +358,8 @@ export default function SignupPage() {
         </div>
       </div>
 
+      {/* spin animation is now in globals.css */}
       <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
         @media (max-width: 900px) {
           .hide-on-mobile { display: none !important; }
           .full-width-on-mobile { width: 100% !important; padding: 40px 20px !important; }

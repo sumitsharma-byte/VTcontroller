@@ -29,14 +29,13 @@ export default function CalendarPage() {
 
   useEffect(() => {
     if (!user?.current_workspace_id) return;
-    projectsApi.list(user.current_workspace_id).then(async res => {
-      setProjects(res.projects);
-      const allTasks: ApiTask[] = [];
-      await Promise.all(res.projects.map(async p => {
-        const t = await tasksApi.list(p.id);
-        allTasks.push(...t.tasks);
-      }));
-      setTasks(allTasks);
+    // Fetch projects + all user tasks in just 2 API calls (was N+1 before)
+    Promise.all([
+      projectsApi.list(user.current_workspace_id),
+      tasksApi.myTasks(),
+    ]).then(([projRes, taskRes]) => {
+      setProjects(projRes.projects);
+      setTasks(taskRes.tasks);
     }).finally(() => setLoading(false));
   }, [user]);
 
@@ -246,7 +245,7 @@ export default function CalendarPage() {
         </div>
       </div>
 
-      <style>{`@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }`}</style>
+      {/* Animations are now in globals.css */}
     </AppLayout>
   );
 }
